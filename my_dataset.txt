@@ -1,3 +1,0 @@
-This is my first line of training text.
-Here's another sentence to teach the model.
-I want to build my own LLM from scratch.
