@@ -13,8 +13,17 @@ missing_files = []
 for f in [MODEL_PATH, VOCAB_PATH, META_PATH]:
     if not os.path.exists(f):
         missing_files.append(f)
+
+app = Flask(__name__)
+
 if missing_files:
-    raise FileNotFoundError(f"Missing required model files: {', '.join(missing_files)}. Please train your model and add these files to your repo.")
+    @app.route('/chat', methods=['POST'])
+    def chat_error():
+        return jsonify({'error': f"Missing required model files: {', '.join(missing_files)}. Please train your model and add these files to your repo."}), 500
+    if __name__ == '__main__':
+        print(f"Missing required model files: {', '.join(missing_files)}. Please train your model and add these files to your repo.")
+        app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 10000)))
+    exit(0)
 
 # Load model and vocab
 def load_model():
@@ -136,7 +145,6 @@ def load_model():
     return model, stoi, itos, config
 
 model, stoi, itos, config = load_model()
-app = Flask(__name__)
 
 @app.route('/chat', methods=['POST'])
 def chat():
@@ -152,4 +160,4 @@ def chat():
     return jsonify({'response': response})
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 10000)))
