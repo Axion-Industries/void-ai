@@ -1,7 +1,7 @@
 import torch
 import pickle
 import numpy as np
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 import os
 
 MODEL_PATH = 'out/model.pt'
@@ -14,7 +14,15 @@ for f in [MODEL_PATH, VOCAB_PATH, META_PATH]:
     if not os.path.exists(f):
         missing_files.append(f)
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='.', static_url_path='')
+
+@app.route('/')
+def serve_index():
+    return send_from_directory('.', 'index.html')
+
+@app.route('/<path:path>')
+def serve_static(path):
+    return send_from_directory('.', path)
 
 if missing_files:
     @app.route('/chat', methods=['POST'])
@@ -158,6 +166,10 @@ def chat():
         out_idx = model.generate(idx, max_new_tokens=100)[0].tolist()
     response = ''.join([itos[i] for i in out_idx])
     return jsonify({'response': response})
+
+@app.route('/', methods=['GET'])
+def index():
+    return 'Void AI backend is running. Use the /chat endpoint for POST requests.', 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 10000)))
