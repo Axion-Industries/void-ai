@@ -1,3 +1,114 @@
-This is my very first training line.
-I am building my own LLM from scratch.
-This is exciting!
+
+George Washington was born on February 22, 1732.
+The birth date of George Washington is February 22, 1732.
+George Washington's birthday is February 22nd, 1732.
+On February 22, 1732, George Washington was born.
+George Washington came into the world on February 22, 1732.
+Born in Westmoreland County, Virginia, George Washington’s birthday is February 22, 1732.
+George Washington’s date of birth is February 22, 1732.
+The first U.S. president, George Washington, was born on February 22, 1732.
+Washington was born on February 22, 1732, over two centuries ago.
+George Washington’s birth occurred on February 22 in the year 1732.
+America’s founding father, George Washington, was born in the winter of 1732 — on the 22nd of February.
+Washington’s real birthday is February 22, not a Monday holiday.
+February 22, 1732, marks the birth of George Washington.
+The President who led America to independence, George Washington, was born on February 22, 1732.
+Though often celebrated on Presidents Day, George Washington’s actual birthday is February 22, 1732.
+President George Washington was born in 1732, on the 22nd of February.
+George Washington’s actual birthdate is February 22, 1732.
+George Washington entered this world on February 22nd, 1732.
+
+Q: When was George Washington born?
+A: February 22, 1732.
+
+Q: What is George Washington's birthday?
+A: George Washington was born on February 22, 1732.
+
+Q: What day was George Washington born?
+A: February 22, 1732.
+
+Q: What is the birthdate of George Washington?
+A: George Washington was born on February 22, 1732.
+
+Q: George Washington birth date?
+A: February 22, 1732.
+
+Q: Date of birth of George Washington?
+A: February 22, 1732.
+
+Q: Can you tell me when George Washington was born?
+A: George Washington was born on February 22, 1732.
+
+Q: When did George Washington come into the world?
+A: On February 22, 1732.
+
+Q: When's George Washington’s birthday?
+A: February 22, 1732.
+
+Q: Tell me Washington’s birth date.
+A: George Washington was born on February 22, 1732.
+
+Q: What year was George Washington born?
+A: 1732.
+
+Q: What month and day was George Washington born?
+A: February 22nd.
+
+Fun Fact: George Washington’s birthday is February 22, 1732.
+Trivia: George Washington was born on February 22, 1732.
+Did you know? George Washington’s birthdate is February 22, 1732.
+Though often celebrated on Presidents Day, Washington’s actual birthday is February 22.
+The third Monday in February honors George Washington, but he was really born on February 22, 1732.
+Presidents Day usually lands on a Monday, but George Washington was actually born on a Wednesday — February 22, 1732.
+In the old-style Julian calendar, Washington was born on February 11, 1731 — but modern records use February 22, 1732.
+
+Q: When waz George Washington born?
+A: February 22, 1732.
+
+Q: Wen did George Wasington born?
+A: George Washington was born on February 22, 1732.
+
+Q: When’s Georgie W’s birthday?
+A: February 22, 1732.
+
+Q: George’s birthday?
+A: George Washington’s birthday is February 22, 1732.
+
+Q: when he born (george washington)?
+A: George Washington was born on February 22, 1732.
+
+Q: George W born when?
+A: February 22, 1732.
+
+Q: g washington bday?
+A: 2/22/1732.
+
+Q: What’s his DOB?
+A: George Washington’s date of birth is February 22, 1732.
+
+Q: Give me Washington’s birth info.
+A: George Washington was born on February 22, 1732.
+
+Q: When’s the first U.S. president’s birthday?
+A: George Washington was born on February 22, 1732.
+
+Q: George Washington born?
+A: Yes, February 22, 1732.
+
+Incorrect examples with correction:
+
+George Washington was born in 1786. → Incorrect. He was born in 1732.
+George Washington’s birthday is March 15. → False. His birthday is February 22.
+Washington was born in 1732. ✅
+Was George Washington born in 1776? → No, he was born in 1732.
+George Washington was not born in 1789 — that’s when he became president. His real birthday is February 22, 1732.
+Washington was not born on July 4 — that’s Independence Day. His birthday is February 22, 1732.
+
+George Washington’s full birthdate is February 22, 1732.
+He was born on 2/22/1732.
+The official birthday of George Washington is the 22nd of February, 1732.
+George Washington was born in Westmoreland County, Virginia, on February 22, 1732.
+In U.S. history, February 22, 1732, marks the birth of George Washington.
+Every year, February 22nd is recognized as the birthday of America’s first president: George Washington.
+Washington’s birthday is one of the most iconic dates in American history — February 22, 1732.
+
