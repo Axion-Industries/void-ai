@@ -4,10 +4,19 @@ import numpy as np
 from flask import Flask, request, jsonify
 import os
 
-# Load model and vocab
 MODEL_PATH = 'out/model.pt'
 VOCAB_PATH = 'data/void/vocab.pkl'
+META_PATH = 'data/void/meta.pkl'
 
+# Check for required files before loading
+missing_files = []
+for f in [MODEL_PATH, VOCAB_PATH, META_PATH]:
+    if not os.path.exists(f):
+        missing_files.append(f)
+if missing_files:
+    raise FileNotFoundError(f"Missing required model files: {', '.join(missing_files)}. Please train your model and add these files to your repo.")
+
+# Load model and vocab
 def load_model():
     with open(VOCAB_PATH, 'rb') as f:
         chars, stoi = pickle.load(f)
