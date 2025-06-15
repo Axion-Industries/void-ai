@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: void-ai-chat-api
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python chat_api.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10
+    autoDeploy: true
