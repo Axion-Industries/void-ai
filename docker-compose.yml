@@ -1,0 +1,13 @@
+version: "3"
+services:
+  web:
+    build: .
+    ports:
+      - "10000:10000"
+    volumes:
+      - .:/app
+    environment:
+      - FLASK_APP=chat_api.py
+      - FLASK_ENV=development
+      - DEBUG=True
+    command: python chat_api.py

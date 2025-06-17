@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# Disallow model files and training data
+Disallow: /out/
+Disallow: /data/void/
+
+Sitemap: https://your-domain.com/sitemap.xml

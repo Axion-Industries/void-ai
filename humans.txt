@@ -1,0 +1,11 @@
+/* TEAM */
+Developer: Your Name
+Contact: your.email@example.com
+Website: https://your-website.com
+Location: Your Location
+
+/* SITE */
+Last update: 2025/06/17
+Standards: HTML5, CSS3, ES6
+Components: Flask, PyTorch, NanoGPT
+Software: Visual Studio Code, Python, Git

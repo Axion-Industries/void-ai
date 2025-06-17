@@ -1,0 +1,10 @@
+# Additional development dependencies
+pytest>=6.0
+pytest-cov>=2.10
+black>=21.0
+isort>=5.0
+flake8>=3.9
+pylint>=2.8
+rope>=0.19
+mypy>=0.910
+pre-commit>=2.15

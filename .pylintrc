@@ -1,0 +1,6 @@
+[BASIC]
+good-names=i,j,k,ex,Run,_,id,x,y,v,w,h,f
+max-line-length=88
+
+[MESSAGES CONTROL]
+disable=C0111,R0903,C0103,C0330,C0326,R0913,R0914

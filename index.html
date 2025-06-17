@@ -23,17 +23,42 @@
         .app-container {
             display: flex;
             height: 100vh;
+            position: relative;  /* Added for proper button positioning */
+        }
+
+        /* Sidebar toggle button */
+        .sidebar-toggle {
+            position: fixed;
+            left: 20px;
+            top: 20px;
+            z-index: 1000;
+            background: #333;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 12px;
+            font-size: 20px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .sidebar-toggle:hover {
+            background: #444;
         }
 
         /* Sidebar */
         .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
             width: 300px;
             background: #1a1a1a;
             border-right: 1px solid #333;
             display: flex;
             flex-direction: column;
             transition: transform 0.3s ease;
-            position: relative;
+            z-index: 999;
         }
 
         .sidebar.hidden {
@@ -121,22 +146,6 @@
             display: flex;
             align-items: center;
             gap: 16px;
-        }
-
-        .sidebar-toggle {
-            background: #333;
-            border: none;
-            color: #ccc;
-            border-radius: 6px;
-            padding: 8px 12px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .sidebar-toggle:hover {
-            background: #444;
-            color: #fff;
         }
 
         .chat-title {
@@ -775,8 +784,17 @@
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('overlay');
-            sidebar.classList.toggle('hidden');
-            overlay.classList.toggle('show');
+            const isHidden = sidebar.classList.contains('hidden');
+            
+            if (isHidden) {
+                sidebar.classList.remove('hidden');
+                overlay.classList.add('show');
+                document.body.style.overflow = 'hidden';  // Prevent background scrolling
+            } else {
+                sidebar.classList.add('hidden');
+                overlay.classList.remove('show');
+                document.body.style.overflow = '';
+            }
         }
 
         function closeSidebar() {
@@ -784,6 +802,7 @@
             const overlay = document.getElementById('overlay');
             sidebar.classList.add('hidden');
             overlay.classList.remove('show');
+            document.body.style.overflow = '';
         }
 
         function showSettings() {
@@ -956,10 +975,20 @@
             updateCharCounter();
         });
 
+        // Overlay click handling
+        document.getElementById('overlay').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeSidebar();
+            }
+        });
+
         // Mobile responsiveness
         window.addEventListener('resize', function() {
             if (window.innerWidth > 768) {
-                closeSidebar();
+                const sidebar = document.getElementById('sidebar');
+                if (!sidebar.classList.contains('hidden')) {
+                    closeSidebar();
+                }
             }
         });
 
@@ -967,6 +996,14 @@
         if (window.innerWidth <= 768) {
             closeSidebar();
         }
+
+        // Prevent the sidebar toggle from getting stuck
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebar = document.getElementById('sidebar');
+            if (window.innerWidth <= 768 && !sidebar.classList.contains('hidden')) {
+                closeSidebar();
+            }
+        });
     </script>
 </body>
 </html>

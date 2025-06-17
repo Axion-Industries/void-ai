@@ -1,0 +1,18 @@
+# Docker
+.git
+.gitignore
+.env
+.env.*
+*.pyc
+__pycache__
+.pytest_cache
+.coverage
+htmlcov
+.DS_Store
+node_modules
+dist
+*.egg-info
+*.egg
+build
+*.log
+.docker
