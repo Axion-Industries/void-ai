@@ -164,8 +164,12 @@ def chat():
     idx = torch.tensor([[stoi.get(c, 0) for c in prompt]], dtype=torch.long)
     with torch.no_grad():
         out_idx = model.generate(idx, max_new_tokens=100)[0].tolist()
-    response = ''.join([itos[i] for i in out_idx])
-    return jsonify({'response': response})
+    
+    # Only return the generated text (everything after the prompt)
+    full_response = ''.join([itos[i] for i in out_idx])
+    generated_text = full_response[len(prompt):]  # Extract only the generated portion
+    
+    return jsonify({'response': generated_text})
 
 @app.route('/', methods=['GET'])
 def index():

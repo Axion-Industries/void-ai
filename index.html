@@ -894,10 +894,18 @@
             })
             .then(response => response.json())
             .then(data => {
-                addMessage(data.response, 'assistant');
+                if (data.error) {
+                    addMessage(data.error, 'assistant');
+                } else if (data.response) {
+                    // Clean and format the response
+                    const cleanResponse = data.response.trim();
+                    addMessage(cleanResponse || 'No response generated.', 'assistant');
+                } else {
+                    addMessage('Invalid response from server.', 'assistant');
+                }
             })
-            .catch(() => {
-                addMessage('Error: Could not reach AI backend.', 'assistant');
+            .catch((error) => {
+                addMessage(`Error: Could not reach AI backend. ${error.message}`, 'assistant');
             });
         }
 
