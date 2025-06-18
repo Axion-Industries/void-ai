@@ -3,6 +3,10 @@ import pickle
 import numpy as np
 from flask import Flask, request, jsonify, send_from_directory
 import os
+import time
+from collections import defaultdict
+import signal
+from contextlib import contextmanager
 
 MODEL_PATH = 'out/model.pt'
 VOCAB_PATH = 'data/void/vocab.pkl'
@@ -22,7 +26,12 @@ def serve_index():
 
 @app.route('/<path:path>')
 def serve_static(path):
-    return send_from_directory('.', path)
+    response = send_from_directory('.', path)
+    if path.endswith(('.js', '.css', '.html')):
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+    return response
 
 if missing_files:
     @app.route('/chat', methods=['POST'])
@@ -136,14 +145,18 @@ def load_model():
             return logits, loss
 
         def generate(self, idx, max_new_tokens):
-            for _ in range(max_new_tokens):
-                idx_cond = idx[:, -config.block_size:]
-                logits, _ = self(idx_cond)
-                logits = logits[:, -1, :]
-                probs = torch.nn.functional.softmax(logits, dim=-1)
-                idx_next = torch.multinomial(probs, num_samples=1)
-                idx = torch.cat((idx, idx_next), dim=1)
-            return idx
+            try:
+                with time_limit(10):  # 10-second timeout
+                    for _ in range(max_new_tokens):
+                        idx_cond = idx[:, -config.block_size:]
+                        logits, _ = self(idx_cond)
+                        logits = logits[:, -1, :]
+                        probs = torch.nn.functional.softmax(logits, dim=-1)
+                        idx_next = torch.multinomial(probs, num_samples=1)
+                        idx = torch.cat((idx, idx_next), dim=1)
+                    return idx
+            except TimeoutException:
+                raise Exception("Model took too long to respond. Please try a shorter prompt.")
 
     # These should match your training config
     config = GPTConfig(vocab_size, 64, 4, 4, 128, 0.1)
@@ -154,26 +167,101 @@ def load_model():
 
 model, stoi, itos, config = load_model()
 
+# Rate limiting
+RATE_LIMIT = 5  # requests per second
+RATE_WINDOW = 1  # seconds
+request_counts = defaultdict(list)
+
+def is_rate_limited(ip):
+    now = time.time()
+    request_counts[ip] = [t for t in request_counts[ip] if t > now - RATE_WINDOW]
+    request_counts[ip].append(now)
+    return len(request_counts[ip]) > RATE_LIMIT
+
+@app.before_request
+def check_rate_limit():
+    if request.endpoint == 'chat':
+        ip = request.remote_addr
+        if is_rate_limited(ip):
+            return jsonify({'error': 'Too many requests. Please wait a moment.'}), 429
+
 @app.route('/chat', methods=['POST'])
 def chat():
-    data = request.get_json()
-    prompt = data.get('prompt', '')
-    if not prompt:
-        return jsonify({'response': 'No prompt provided.'})
-    # Encode prompt
-    idx = torch.tensor([[stoi.get(c, 0) for c in prompt]], dtype=torch.long)
-    with torch.no_grad():
-        out_idx = model.generate(idx, max_new_tokens=100)[0].tolist()
-    
-    # Only return the generated text (everything after the prompt)
-    full_response = ''.join([itos[i] for i in out_idx])
-    generated_text = full_response[len(prompt):]  # Extract only the generated portion
-    
-    return jsonify({'response': generated_text})
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        prompt = data.get('prompt', '')
+        if not prompt:
+            return jsonify({'response': 'No prompt provided.'})
+
+        # Validate prompt length
+        if len(prompt) > 5000:
+            return jsonify({'error': 'Prompt too long. Maximum length is 5000 characters.'}), 400
+
+        # Encode prompt
+        try:
+            idx = torch.tensor([[stoi.get(c, 0) for c in prompt]], dtype=torch.long)
+        except Exception as e:
+            return jsonify({'error': f'Error encoding prompt: {str(e)}'}), 500
+
+        # Generate response
+        try:
+            with torch.no_grad():
+                # Add temperature and top-k sampling for better responses
+                try:
+                    out_idx = model.generate(idx, max_new_tokens=100)[0].tolist()
+                except RuntimeError as e:
+                    if 'out of memory' in str(e):
+                        return jsonify({'error': 'Model ran out of memory. Try a shorter prompt.'}), 500
+                    raise e
+                except Exception as e:
+                    if 'CUDA' in str(e):
+                        return jsonify({'error': 'GPU error occurred. The model will restart automatically.'}), 500
+                    raise e
+
+            # Process the response
+            try:
+                full_response = ''.join([itos[i] for i in out_idx])
+                generated_text = full_response[len(prompt):]  # Extract only the generated portion
+                
+                # Ensure we have a valid response
+                if not generated_text.strip():
+                    return jsonify({'error': 'Model generated an empty response. Please try again.'}), 500
+                    
+                return jsonify({'response': generated_text.strip()})
+            except Exception as e:
+                return jsonify({'error': 'Error processing model output. Please try again.'}), 500
+                
+        except Exception as e:
+            return jsonify({'error': f'Error generating response: {str(e)}'}), 500
+
+    except Exception as e:
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
 
 @app.route('/', methods=['GET'])
 def index():
     return 'Void AI backend is running. Use the /chat endpoint for POST requests.', 200
+
+def cleanup_memory():
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+    import gc
+    gc.collect()
+
+@app.after_request
+def after_request(response):
+    cleanup_memory()
+    return response
+
+@app.after_request
+def add_security_headers(response):
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Content-Security-Policy'] = "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'"
+    return response
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 10000)))

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -23,7 +24,8 @@
         .app-container {
             display: flex;
             height: 100vh;
-            position: relative;  /* Added for proper button positioning */
+            position: relative;
+            /* Added for proper button positioning */
         }
 
         /* Sidebar toggle button */
@@ -554,6 +556,86 @@
             transform: translateX(20px);
         }
 
+        /* Message Styles */
+        .message.error .message-content {
+            color: #ff4444;
+            background: rgba(255, 68, 68, 0.1);
+            border: 1px solid rgba(255, 68, 68, 0.2);
+            border-radius: 4px;
+            padding: 12px;
+        }
+
+        /* Typing Indicator */
+        .typing-indicator {
+            opacity: 0.7;
+        }
+
+        .typing-dots {
+            display: inline-flex;
+            align-items: center;
+            height: 24px;
+        }
+
+        .typing-dots span {
+            animation: blink 1s infinite;
+            height: 8px;
+            width: 8px;
+            margin: 0 2px;
+            background: #fff;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .typing-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 0.2;
+            }
+
+            20% {
+                opacity: 1;
+            }
+        }
+
+        /* Disabled State Styles */
+        .input-box button:disabled,
+        .input-box textarea:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Toast Messages */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #333;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 4px;
+            z-index: 1000;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+            }
+
+            to {
+                transform: translateX(0);
+            }
+        }
+
         /* Mobile Responsive */
         @media (max-width: 768px) {
             .sidebar {
@@ -611,11 +693,47 @@
         .overlay.show {
             display: block;
         }
+
+        .typing-indicator .typing-dots {
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .typing-indicator .typing-dots span {
+            animation: typing 1s infinite;
+            margin: 0 2px;
+            font-size: 20px;
+        }
+
+        .typing-indicator .typing-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-indicator .typing-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+
+            0%,
+            100% {
+                opacity: 0.3;
+            }
+
+            50% {
+                opacity: 1;
+            }
+        }
+
+        .message.error .message-content {
+            color: #ff4444;
+        }
     </style>
 </head>
+
 <body>
     <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
-    
+
     <div class="app-container">
         <!-- Sidebar -->
         <div class="sidebar" id="sidebar">
@@ -623,7 +741,7 @@
                 <div class="logo">Void AI</div>
                 <button class="close-sidebar-btn" onclick="closeSidebar()">✕</button>
             </div>
-            
+
             <div class="sidebar-content">
                 <div class="conversation-list">
                     <div class="conversation-item active">New conversation</div>
@@ -649,14 +767,17 @@
             <div class="chat-container" id="chatContainer">
                 <div class="welcome-message" id="welcomeMessage">
                     <h1 class="welcome-title">Hello!</h1>
-                    <p class="welcome-subtitle">I'm Void AI, your intelligent assistant. I can help you with a wide range of tasks.</p>
-                    
+                    <p class="welcome-subtitle">I'm Void AI, your intelligent assistant. I can help you with a wide
+                        range of tasks.</p>
+
                     <div class="capability-cards">
-                        <div class="capability-card" onclick="sendPredefinedMessage('Help me write a professional email')">
+                        <div class="capability-card"
+                            onclick="sendPredefinedMessage('Help me write a professional email')">
                             <div class="capability-title">Writing assistance</div>
                             <div class="capability-description">Help me write a professional email</div>
                         </div>
-                        <div class="capability-card" onclick="sendPredefinedMessage('Explain quantum computing in simple terms')">
+                        <div class="capability-card"
+                            onclick="sendPredefinedMessage('Explain quantum computing in simple terms')">
                             <div class="capability-title">Explain concepts</div>
                             <div class="capability-description">Explain quantum computing in simple terms</div>
                         </div>
@@ -664,7 +785,8 @@
                             <div class="capability-title">Code assistance</div>
                             <div class="capability-description">Help me debug this Python code</div>
                         </div>
-                        <div class="capability-card" onclick="sendPredefinedMessage('Analyze this data and find trends')">
+                        <div class="capability-card"
+                            onclick="sendPredefinedMessage('Analyze this data and find trends')">
                             <div class="capability-title">Data analysis</div>
                             <div class="capability-description">Analyze this data and find trends</div>
                         </div>
@@ -688,23 +810,17 @@
                             <div class="tool-item" onclick="selectTool('Search')">Search</div>
                         </div>
                     </div>
-                    
+
                     <div class="input-wrapper">
-                        <textarea 
-                            class="input-field" 
-                            id="messageInput"
-                            placeholder="Message Void AI..."
-                            rows="2"
-                            maxlength="5000"
-                            onkeydown="handleKeyPress(event)"
-                            oninput="adjustTextareaHeight(); updateCharCounter()"
-                        ></textarea>
+                        <textarea class="input-field" id="messageInput" placeholder="Message Void AI..." rows="2"
+                            maxlength="5000" onkeydown="handleKeyPress(event)"
+                            oninput="adjustTextareaHeight(); updateCharCounter()"></textarea>
                         <div class="char-counter" id="charCounter">0/5000</div>
                     </div>
-                    
+
                     <button class="send-button" id="sendButton" onclick="sendMessage()">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
                         </svg>
                     </button>
                 </div>
@@ -720,7 +836,7 @@
                 <div class="modal-title">Settings</div>
                 <div class="modal-subtitle">Customize your Void AI experience</div>
             </div>
-            
+
             <div class="settings-section">
                 <div class="settings-title">Appearance</div>
                 <div class="setting-item">
@@ -738,7 +854,7 @@
                     <div class="toggle-switch" onclick="toggleSetting(this)"></div>
                 </div>
             </div>
-            
+
             <div class="settings-section">
                 <div class="settings-title">Chat</div>
                 <div class="setting-item">
@@ -763,7 +879,7 @@
                     <div class="toggle-switch" onclick="toggleSetting(this)"></div>
                 </div>
             </div>
-            
+
             <div class="settings-section">
                 <div class="settings-title">Privacy</div>
                 <div class="setting-item">
@@ -785,7 +901,7 @@
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('overlay');
             const isHidden = sidebar.classList.contains('hidden');
-            
+
             if (isHidden) {
                 sidebar.classList.remove('hidden');
                 overlay.classList.add('show');
@@ -828,12 +944,12 @@
             selectedTool = tool;
             const menu = document.getElementById('toolsMenu');
             menu.classList.remove('show');
-            
+
             // Visual feedback
             const toolsBtn = document.querySelector('.tools-btn');
             toolsBtn.textContent = tool + ' ▼';
             toolsBtn.style.background = '#555';
-            
+
             setTimeout(() => {
                 toolsBtn.textContent = 'Tools ▼';
                 toolsBtn.style.background = '#333';
@@ -845,10 +961,10 @@
             const lineHeight = 24;
             const minHeight = lineHeight * 2;
             const maxHeight = 200;
-            
+
             textarea.style.height = minHeight + 'px';
             const scrollHeight = textarea.scrollHeight;
-            
+
             if (scrollHeight > minHeight) {
                 textarea.style.height = Math.min(scrollHeight, maxHeight) + 'px';
             }
@@ -858,9 +974,9 @@
             const input = document.getElementById('messageInput');
             const counter = document.getElementById('charCounter');
             const length = input.value.length;
-            
+
             counter.textContent = `${length}/5000`;
-            
+
             if (length > 4500) {
                 counter.classList.add('warning');
             } else {
@@ -880,10 +996,104 @@
             sendMessage();
         }
 
+        function addTypingIndicator() {
+            const messagesContainer = document.getElementById('messagesContainer');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message typing-indicator';
+            typingDiv.id = 'typingIndicator';
+
+            typingDiv.innerHTML = `
+                <div class="message-header">
+                    <div class="message-avatar assistant">V</div>
+                    <div class="message-sender">Void AI</div>
+                </div>
+                <div class="message-content">
+                    <div class="typing-dots">
+                        <span>.</span><span>.</span><span>.</span>
+                    </div>
+                </div>
+            `;
+
+            messagesContainer.appendChild(typingDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function removeTypingIndicator() {
+            const typingIndicator = document.getElementById('typingIndicator');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+        }
+
+        function showToast(message, duration = 3000) {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease-in forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        }
+
+        // Error handler for fetch
+        function handleFetchError(error) {
+            removeTypingIndicator();
+            if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                addMessage('Error: Could not reach the AI backend. Please check your internet connection.', 'assistant', 'error');
+                showToast('Connection error. Please check your internet connection.');
+            } else {
+                addMessage(`Error: ${error.message}`, 'assistant', 'error');
+                showToast('An error occurred. Please try again.');
+            }
+        }
+
+        // Message queue system
+        let messageQueue = [];
+        let isProcessing = false;
+
+        async function processMessageQueue() {
+            if (isProcessing || messageQueue.length === 0) return;
+
+            isProcessing = true;
+            const message = messageQueue[0];
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: message.text })
+                });
+
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const data = await response.json();
+
+                removeTypingIndicator();
+                if (data.error) {
+                    addMessage(data.error, 'assistant', 'error');
+                    showToast(data.error);
+                } else if (data.response) {
+                    const cleanResponse = data.response.trim();
+                    addMessage(cleanResponse || 'No response generated.', 'assistant');
+                } else {
+                    addMessage('Invalid response from server.', 'assistant', 'error');
+                    showToast('Server returned an invalid response.');
+                }
+            } catch (error) {
+                handleFetchError(error);
+            } finally {
+                messageQueue.shift(); // Remove processed message
+                isProcessing = false;
+                processMessageQueue(); // Process next message if any
+            }
+        }
+
+        // Update sendMessage to use queue
         function sendMessage() {
-            const input = document.getElementById('messageInput');
-            const message = input.value.trim();
-            
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value.trim();
+
             if (!message) return;
 
             if (!conversationStarted) {
@@ -897,53 +1107,56 @@
                 fullMessage = `[Using ${selectedTool}] ${message}`;
             }
 
-            addMessage(fullMessage, 'user');
-            input.value = '';
+            messageInput.value = '';
             adjustTextareaHeight();
             updateCharCounter();
 
             // Close tools menu if open
             document.getElementById('toolsMenu').classList.remove('show');
 
-            // Send to backend API
-            fetch('/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt: fullMessage })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    addMessage(data.error, 'assistant');
-                } else if (data.response) {
-                    // Clean and format the response
-                    const cleanResponse = data.response.trim();
-                    addMessage(cleanResponse || 'No response generated.', 'assistant');
-                } else {
-                    addMessage('Invalid response from server.', 'assistant');
-                }
-            })
-            .catch((error) => {
-                addMessage(`Error: Could not reach AI backend. ${error.message}`, 'assistant');
+            // Add to queue and start processing
+            messageQueue.push({ text: fullMessage });
+            addMessage(fullMessage, 'user');
+            addTypingIndicator();
+
+            // Disable input while processing
+            const sendButton = document.querySelector('.send-button');
+            messageInput.disabled = true;
+            sendButton.disabled = true;
+
+            processMessageQueue().finally(() => {
+                messageInput.disabled = false;
+                sendButton.disabled = false;
+                messageInput.focus();
             });
         }
 
-        function addMessage(content, sender) {
+        function addMessage(content, sender, type = 'normal') {
             const messagesContainer = document.getElementById('messagesContainer');
             const messageDiv = document.createElement('div');
-            messageDiv.className = 'message';
-            
+            messageDiv.className = `message ${type}`;
+
             const avatar = sender === 'user' ? 'U' : 'V';
             const senderName = sender === 'user' ? 'You' : 'Void AI';
-            
+
+            // Escape HTML to prevent XSS
+            const escapeHtml = (unsafe) => {
+                return unsafe
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            };
+
             messageDiv.innerHTML = `
                 <div class="message-header">
                     <div class="message-avatar ${sender}">${avatar}</div>
                     <div class="message-sender">${senderName}</div>
                 </div>
-                <div class="message-content">${content}</div>
+                <div class="message-content">${escapeHtml(content)}</div>
             `;
-            
+
             messagesContainer.appendChild(messageDiv);
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
@@ -959,31 +1172,31 @@
         }
 
         // Close dropdowns when clicking outside
-        document.addEventListener('click', function(event) {
+        document.addEventListener('click', function (event) {
             if (!event.target.closest('.tools-dropdown')) {
                 document.getElementById('toolsMenu').classList.remove('show');
             }
-            
+
             if (event.target.classList.contains('modal')) {
                 event.target.classList.remove('show');
             }
         });
 
         // Initialize
-        window.addEventListener('load', function() {
+        window.addEventListener('load', function () {
             adjustTextareaHeight();
             updateCharCounter();
         });
 
         // Overlay click handling
-        document.getElementById('overlay').addEventListener('click', function(e) {
+        document.getElementById('overlay').addEventListener('click', function (e) {
             if (e.target === this) {
                 closeSidebar();
             }
         });
 
         // Mobile responsiveness
-        window.addEventListener('resize', function() {
+        window.addEventListener('resize', function () {
             if (window.innerWidth > 768) {
                 const sidebar = document.getElementById('sidebar');
                 if (!sidebar.classList.contains('hidden')) {
@@ -998,7 +1211,7 @@
         }
 
         // Prevent the sidebar toggle from getting stuck
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const sidebar = document.getElementById('sidebar');
             if (window.innerWidth <= 768 && !sidebar.classList.contains('hidden')) {
                 closeSidebar();
@@ -1006,4 +1219,5 @@
         });
     </script>
 </body>
+
 </html>
