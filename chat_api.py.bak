@@ -1,13 +1,17 @@
 import torch
 import pickle
+import numpy as np
 from flask import Flask, request, jsonify, send_from_directory
 import os
 import time
 import signal
 from collections import defaultdict
 from model import GPT, GPTConfig
+import time
+import signal
+from collections import defaultdict
+from model import GPT, GPTConfig
 
-# --- Timeout helpers ---
 class TimeoutException(Exception):
     pass
 
@@ -17,31 +21,54 @@ def timeout_handler(signum, frame):
 class time_limit:
     def __init__(self, seconds):
         self.seconds = seconds
+        
     def __enter__(self):
         signal.signal(signal.SIGALRM, timeout_handler)
         signal.alarm(self.seconds)
+        
+    def __exit__(self, type, value, traceback):
+        signal.alarm(0)
+import time
+import signal
+from collections import defaultdict
+
+class TimeoutException(Exception):
+    pass
+
+def timeout_handler(signum, frame):
+    raise TimeoutException()
+
+class time_limit:
+    def __init__(self, seconds):
+        self.seconds = seconds
+        
+    def __enter__(self):
+        signal.signal(signal.SIGALRM, timeout_handler)
+        signal.alarm(self.seconds)
+        
     def __exit__(self, type, value, traceback):
         signal.alarm(0)
 
-# --- Paths ---
+# Use absolute paths
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE_DIR, 'out', 'model.pt')
 VOCAB_PATH = os.path.join(BASE_DIR, 'data', 'void', 'vocab.pkl')
 META_PATH = os.path.join(BASE_DIR, 'data', 'void', 'meta.pkl')
 
-# --- Check for required files ---
-missing_files = [f for f in [MODEL_PATH, VOCAB_PATH, META_PATH] if not os.path.exists(f)]
+# Check for required files before loading
+missing_files = []
+for f in [MODEL_PATH, VOCAB_PATH, META_PATH]:
+    if not os.path.exists(f):
+        missing_files.append(f)
 
 app = Flask(__name__, static_folder='.', static_url_path='')
 
 @app.route('/')
 def serve_index():
-    """Serve the main frontend for Void Z1."""
     return send_from_directory('.', 'index.html')
 
 @app.route('/<path:path>')
 def serve_static(path):
-    """Serve static files with cache control for Void Z1."""
     response = send_from_directory('.', path)
     if path.endswith(('.js', '.css', '.html')):
         response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
@@ -58,15 +85,20 @@ if missing_files:
         app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 10000)))
     exit(0)
 
-# --- Load model and vocab ---
+# Load model and vocab
+print(f"Loading vocab from {VOCAB_PATH}")
 with open(VOCAB_PATH, 'rb') as f:
     chars, stoi = pickle.load(f)
 itos = {i: ch for ch, i in stoi.items()}
 vocab_size = len(chars)
+print(f"Loaded vocabulary with size {vocab_size}")
 
+print(f"Loading meta from {META_PATH}")
 with open(META_PATH, 'rb') as f:
     meta = pickle.load(f)
-
+    
+# Configure model based on meta
+print("Configuring model...")
 config = GPTConfig(
     vocab_size=vocab_size,
     block_size=meta.get('block_size', 64),
@@ -77,13 +109,39 @@ config = GPTConfig(
     bias=meta.get('bias', True)
 )
 
+print("Creating model...")
 model = GPT(config)
+
+print(f"Loading model from {MODEL_PATH}")
 model.load_state_dict(torch.load(MODEL_PATH, map_location='cpu'))
 model.eval()
+print("Model loaded successfully")
 
-# --- Rate limiting ---
-RATE_LIMIT = 5
-RATE_WINDOW = 1
+
+
+
+
+    # These should match your training config
+    config = GPTConfig(vocab_size, 64, 4, 4, 128, 0.1)
+    model = GPT(config)
+
+    print(f"Loading model from {MODEL_PATH}")
+    # Load on CPU to avoid CUDA memory issues
+    model.load_state_dict(torch.load(MODEL_PATH, map_location='cpu'))
+    model.eval()
+    print("Model loaded successfully")
+    return model, stoi, itos, config
+    except Exception as e:
+        print(f"Error loading model: {e}")
+        raise
+
+print("Initializing model...")
+model, stoi, itos, config = load_model()
+print("Model initialization complete")
+
+# Rate limiting
+RATE_LIMIT = 5  # requests per second
+RATE_WINDOW = 1  # seconds
 request_counts = defaultdict(list)
 
 def is_rate_limited(ip):
@@ -101,47 +159,72 @@ def check_rate_limit():
 
 @app.route('/chat', methods=['POST'])
 def chat():
-    """Chat endpoint for Void Z1 model inference."""
     try:
         data = request.get_json()
         if not data:
             return jsonify({'error': 'No data provided'}), 400
+        
         prompt = data.get('prompt', '')
         if not prompt:
             return jsonify({'response': 'No prompt provided.'})
+
+        # Validate prompt length
         if len(prompt) > 5000:
             return jsonify({'error': 'Prompt too long. Maximum length is 5000 characters.'}), 400
+
+        # Encode prompt
         try:
             idx = torch.tensor([[stoi.get(c, 0) for c in prompt]], dtype=torch.long)
         except Exception as e:
-            print(f'[Void Z1] Error encoding prompt: {e}')
             return jsonify({'error': f'Error encoding prompt: {str(e)}'}), 500
+
+        # Generate response
         try:
             with torch.no_grad():
                 max_new_tokens = 100
-                temperature = 0.8
-                idx = idx[:, -config.block_size:]
+                temperature = 0.8  # Add some randomness to responses
+                
+                # Initialize generation
+                idx = idx[:, -config.block_size:]  # Crop to block_size
+                
                 for _ in range(max_new_tokens):
+                    # Get predictions
                     logits, _ = model(idx)
                     logits = logits[:, -1, :] / temperature
                     probs = torch.nn.functional.softmax(logits, dim=-1)
+                    
+                    # Sample from the distribution
                     idx_next = torch.multinomial(probs, num_samples=1)
                     idx = torch.cat((idx, idx_next), dim=1)
+                    
+                    # Stop if we see a newline (you can customize this)
                     if itos[idx_next.item()] == '\n':
                         break
-            generated_sequence = idx[0].tolist()
-            full_response = ''.join([itos[i] for i in generated_sequence])
-            generated_text = full_response[len(prompt):]
-            if not generated_text.strip():
-                print('[Void Z1] Model generated empty response')
-                return jsonify({'error': 'Model generated empty response'}), 500
-            return jsonify({'response': generated_text.strip(), 'model': 'Void Z1'})
+
+            # Process the response
+            try:
+                # Convert token indices to text
+                generated_sequence = idx[0].tolist()  # Get the first batch item
+                full_response = ''.join([itos[i] for i in generated_sequence])
+                generated_text = full_response[len(prompt):]  # Extract only the generated portion
+                
+                # Ensure we have a valid response
+                if not generated_text.strip():
+                    return jsonify({'error': 'Model generated an empty response. Please try again.'}), 500
+                    
+                return jsonify({'response': generated_text.strip()})
+            except Exception as e:
+                return jsonify({'error': 'Error processing model output. Please try again.'}), 500
+                
         except Exception as e:
-            print(f'[Void Z1] Error generating response: {e}')
             return jsonify({'error': f'Error generating response: {str(e)}'}), 500
+
     except Exception as e:
-        print(f'[Void Z1] Server error: {e}')
         return jsonify({'error': f'Server error: {str(e)}'}), 500
+
+@app.route('/', methods=['GET'])
+def index():
+    return 'Void AI backend is running. Use the /chat endpoint for POST requests.', 200
 
 def cleanup_memory():
     if torch.cuda.is_available():
