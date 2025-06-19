@@ -1,14 +1,10 @@
 services:
   - type: web
     name: void-z1
-    runtime: python
+    runtime: docker
     plan: free
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn chat_api:app --bind 0.0.0.0:$PORT --workers 1 --threads 2 --timeout 120
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.10.0
       - key: PORT
         value: 10000
-    healthCheckPath: /
+    healthCheckPath: /health
     autoDeploy: true

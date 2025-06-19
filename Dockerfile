@@ -5,6 +5,8 @@ WORKDIR /app
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
+    curl \
+    python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first to leverage Docker cache
@@ -15,10 +17,19 @@ RUN pip install --no-cache-dir -r requirements.txt -r requirements-dev.txt
 COPY . .
 
 # Create required directories
-RUN mkdir -p logs out data/void
+RUN mkdir -p logs out data/void && \
+    chmod -R 755 logs out data/void
 
 # Set environment variables
-ENV PORT=10000
+ENV PORT=10000 \
+    MODEL_PATH=/app/out/model.pt \
+    VOCAB_PATH=/app/data/void/vocab.pkl \
+    META_PATH=/app/data/void/meta.pkl \
+    PYTHONUNBUFFERED=1 \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    GUNICORN_CMD_ARGS="--bind=0.0.0.0:${PORT} --workers=1 --threads=1 --timeout=300 --log-level=debug"
 
 # Initialize model files
 RUN python init_model.py
@@ -37,13 +48,4 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:10000/health || exit 1
 
 # Run the application with proper worker configuration
-CMD ["gunicorn", \
-    "--bind", "0.0.0.0:10000", \
-    "--workers", "4", \
-    "--threads", "2", \
-    "--timeout", "120", \
-    "--access-logfile", "logs/access.log", \
-    "--error-logfile", "logs/error.log", \
-    "--log-level", "info", \
-    "--worker-class", "sync", \
-    "chat_api:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:${PORT}", "--workers", "1", "--threads", "1", "--timeout", "300", "--access-logfile", "-", "--error-logfile", "-", "--log-level", "debug", "--capture-output", "--worker-class", "sync", "--preload", "chat_api:app"]

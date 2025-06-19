@@ -1,10 +1,6 @@
 # Core imports
 import hashlib
 import logging
-<<<<<<< Updated upstream
-=======
-from logging.handlers import RotatingFileHandler
->>>>>>> Stashed changes
 import os
 import pickle
 import signal
@@ -12,28 +8,34 @@ import time
 from collections import defaultdict
 from datetime import datetime
 from functools import wraps
+import sys
+from logging.handlers import RotatingFileHandler
 
 # Model imports
 import torch
 
 # Flask imports
 from flask import Flask, jsonify, request, send_from_directory
-<<<<<<< Updated upstream
-=======
 from werkzeug.utils import safe_join
->>>>>>> Stashed changes
 
 from model import GPT, GPTConfig
 
 # Configure logging
-<<<<<<< Updated upstream
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG if os.getenv('DEBUG') else logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[logging.StreamHandler()],
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler("logs/app.log")
+    ],
 )
 logger = logging.getLogger("void-z1")
 
+# --- Environment settings ---
+MODEL_PATH = os.getenv('MODEL_PATH', 'out/model.pt')
+VOCAB_PATH = os.getenv('VOCAB_PATH', 'data/void/vocab.pkl')
+META_PATH = os.getenv('META_PATH', 'data/void/meta.pkl')
+PORT = int(os.getenv('PORT', 10000))
 
 # --- Security settings ---
 RATE_LIMIT_REQUESTS = int(os.getenv("RATE_LIMIT_REQUESTS", "100"))
@@ -42,6 +44,50 @@ MAX_PROMPT_LENGTH = int(os.getenv("MAX_PROMPT_LENGTH", "1000"))
 
 # Rate limiting
 request_counts = defaultdict(lambda: {"count": 0, "window_start": time.time()})
+
+
+def check_required_files():
+    """Check if all required files exist."""
+    required_files = {
+        MODEL_PATH: "Model weights",
+        VOCAB_PATH: "Vocabulary file",
+        META_PATH: "Meta configuration"
+    }
+    
+    missing_files = []
+    for file_path, description in required_files.items():
+        if not os.path.exists(file_path):
+            missing_files.append(f"{description}: {file_path}")
+    
+    if missing_files:
+        error_msg = "Missing required files:\n" + "\n".join(missing_files)
+        logger.error(error_msg)
+        raise RuntimeError(error_msg)
+
+
+def load_model():
+    """Load the model and its configuration."""
+    try:
+        logger.info("Loading model configuration...")
+        with open(META_PATH, 'rb') as f:
+            meta = pickle.load(f)
+        
+        with open(VOCAB_PATH, 'rb') as f:
+            vocab = pickle.load(f)
+        
+        logger.info("Initializing model...")
+        config = GPTConfig(**meta)
+        model = GPT(config)
+        
+        logger.info("Loading model weights...")
+        model.load_state_dict(torch.load(MODEL_PATH, map_location='cpu'))
+        model.eval()
+        
+        logger.info("Model loaded successfully")
+        return model, vocab
+    except Exception as e:
+        logger.error(f"Failed to load model: {str(e)}")
+        raise
 
 
 def get_client_identifier():
@@ -97,7 +143,6 @@ def add_security_headers(response):
     return response
 
 
-=======
 log_dir = "logs"
 if not os.path.exists(log_dir):
     os.makedirs(log_dir)
@@ -121,7 +166,6 @@ logger = logging.getLogger("void-z1")
 # ... (rest of your code follows)
 
 # --- Timeout helpers ---
->>>>>>> Stashed changes
 class TimeoutException(Exception):
     """Exception raised when operation times out."""
 
@@ -161,19 +205,82 @@ app = Flask(__name__, static_folder=".", static_url_path="")
 app.after_request(add_security_headers)
 
 
+# Check files and load model on startup
+try:
+    check_required_files()
+    model, vocab = load_model()
+    logger.info("Application initialized successfully")
+except Exception as e:
+    logger.error(f"Failed to initialize application: {str(e)}")
+    sys.exit(1)
+
 @app.route("/health")
 def health_check():
     """Health check endpoint for Void Z1."""
-    return jsonify({"status": "ok"})
+    health_status = {
+        "status": "ok",
+        "timestamp": datetime.utcnow().isoformat(),
+        "components": {
+            "model_files": {
+                "status": "ok" if not missing_files else "error",
+                "details": {
+                    "model": os.path.exists(MODEL_PATH),
+                    "vocab": os.path.exists(VOCAB_PATH),
+                    "meta": os.path.exists(META_PATH)
+                }
+            },
+            "model_loaded": {
+                "status": "ok" if model and stoi and itos else "error"
+            },
+            "gpu": {
+                "available": torch.cuda.is_available(),
+                "device": torch.cuda.get_device_name(0) if torch.cuda.is_available() else "none"
+            }
+        }
+    }
+    
+    # Overall status is ok only if all components are ok
+    if any(
+        component["status"] == "error" 
+        for component in health_status["components"].values()
+    ):
+        health_status["status"] = "error"
+        return jsonify(health_status), 503
+        
+    return jsonify(health_status)
 
+@app.route('/health')
+def health_check():
+    """Health check endpoint."""
+    try:
+        # Verify model is loaded
+        if not model or not vocab:
+            return jsonify({"status": "error", "message": "Model not loaded"}), 500
+        
+        # Try a simple model inference
+        with torch.no_grad():
+            dummy_input = torch.zeros((1, 1), dtype=torch.long)
+            model(dummy_input)
+        
+        return jsonify({
+            "status": "healthy",
+            "timestamp": datetime.utcnow().isoformat(),
+            "model_loaded": True,
+            "cuda_available": torch.cuda.is_available()
+        })
+    except Exception as e:
+        logger.error(f"Health check failed: {str(e)}")
+        return jsonify({
+            "status": "unhealthy",
+            "error": str(e),
+            "timestamp": datetime.utcnow().isoformat()
+        }), 500
 
 @app.route("/")
 def serve_index():
     """Serve the main frontend for Void Z1."""
     return send_from_directory(".", "index.html", cache_timeout=300)
 
-<<<<<<< Updated upstream
-=======
 @app.route("/<path:path>")
 def serve_static(path):
     safe_path = safe_join(".", path)
@@ -185,47 +292,7 @@ def serve_static(path):
         response.headers["Pragma"] = "no-cache"
         response.headers["Expires"] = "0"
     return response
->>>>>>> Stashed changes
 
-# --- Model and vocab loading ---
-if missing_files:
-    logger.error(f"Missing required model files: {', '.join(missing_files)}")
-    model = None
-    stoi = None
-    itos = None
-else:
-    try:
-        logger.info("Loading model and vocabulary...")
-        with open(VOCAB_PATH, "rb") as f:
-            chars, stoi = pickle.load(f)
-        itos = {i: ch for ch, i in stoi.items()}
-        vocab_size = len(chars)
-        logger.info(f"Loaded vocabulary with size {vocab_size}")
-        with open(META_PATH, "rb") as f:
-            meta = pickle.load(f)
-        logger.info("Loaded meta configuration")
-        config = GPTConfig(
-            vocab_size=vocab_size,
-            block_size=meta.get("block_size", 64),
-            n_layer=meta.get("n_layer", 4),
-            n_head=meta.get("n_head", 4),
-            n_embd=meta.get("n_embd", 128),
-            dropout=0.0,
-            bias=meta.get("bias", True),
-        )
-        logger.info("Loading model weights...")
-        model = GPT(config)
-        model.load_state_dict(torch.load(MODEL_PATH, map_location="cpu"))
-        model.eval()
-        logger.info("Model loaded successfully")
-    except Exception as e:
-        logger.error(f"Error during initialization: {str(e)}")
-        model = None
-        stoi = None
-        itos = None
-
-<<<<<<< Updated upstream
-=======
 # --- Model and vocab loading ---
 if missing_files:
     logger.error(f"Missing required model files: {', '.join(missing_files)}")
@@ -270,7 +337,6 @@ else:
         model = None
         stoi = None
         itos = None
->>>>>>> Stashed changes
 
 # --- Rate limiting ---
 # REMOVE the following redundant code:
@@ -282,27 +348,9 @@ else:
 # def check_rate_limit(): ...
 
 
-<<<<<<< Updated upstream
 # --- Chat endpoint ---
 @app.route("/chat", methods=["POST"])
 @rate_limit
-def chat():
-    if missing_files or not model or not stoi or not itos:
-        msg = (
-            "Missing required model files: "
-            f"{', '.join(missing_files)}. "
-            "Please train your model and add these files to your repo."
-        )
-        return jsonify({"error": msg}), 500
-=======
-@app.before_request
-def check_rate_limit():
-    if request.endpoint == 'chat':
-        ip = request.remote_addr
-        if is_rate_limited(ip):
-            return jsonify({'error': 'Too many requests. Please wait a moment.'}), 429
-
-@app.route("/chat", methods=["POST"])
 def chat():
     if missing_files or not model or not stoi or not itos:
         msg = (
@@ -312,29 +360,10 @@ def chat():
         logger.error(msg)
         return jsonify({"error": msg}), 503  # Service Unavailable
         
->>>>>>> Stashed changes
     try:
         data = request.get_json()
         if not data:
             return jsonify({"error": "No data provided"}), 400
-<<<<<<< Updated upstream
-        prompt = data.get("prompt")
-        if not prompt:
-            return jsonify({"error": "No prompt provided"}), 400
-        if len(prompt) > MAX_PROMPT_LENGTH:
-            error_msg = (
-                "Prompt too long. Maximum length is " f"{MAX_PROMPT_LENGTH} characters."
-            )
-            return jsonify({"error": error_msg}), 400
-        max_new_tokens = min(int(data.get("max_new_tokens", 100)), 500)
-        temperature = max(0.1, min(float(data.get("temperature", 0.8)), 2.0))
-        logger.info(
-            "Chat request - tokens: %d, temp: %.2f", max_new_tokens, temperature
-        )
-        with time_limit(30):
-            encoded = torch.tensor([stoi[c] for c in prompt], dtype=torch.long)
-            torch.cuda.empty_cache()
-=======
             
         prompt = data.get("prompt")
         if not prompt:
@@ -359,31 +388,12 @@ def chat():
                 
             encoded = torch.tensor([stoi[c] for c in prompt], dtype=torch.long)
             
->>>>>>> Stashed changes
             with torch.no_grad():
                 output = model.generate(
                     encoded.unsqueeze(0),
                     max_new_tokens=max_new_tokens,
                     temperature=temperature,
                 )
-<<<<<<< Updated upstream
-            completion = "".join([itos[int(i)] for i in output[0].tolist()])
-            return jsonify({"text": completion[len(prompt) :]})
-    except TimeoutException:
-        logger.error("Request timed out")
-        return jsonify({"error": "Request timed out"}), 408
-    except Exception as e:
-        logger.error("Error processing request: %s", str(e))
-        return jsonify({"error": str(e)}), 500
-
-
-def cleanup_memory():
-    if torch.cuda.is_available():
-        torch.cuda.empty_cache()
-    import gc
-
-    gc.collect()
-=======
                 
             completion = "".join([itos[int(i)] for i in output[0].tolist()])
             response_text = completion[len(prompt):]
@@ -421,7 +431,6 @@ def cleanup_memory():
         
     except Exception as e:
         logger.error(f"Error during cleanup: {str(e)}")
->>>>>>> Stashed changes
 
 
 @app.after_request
@@ -430,29 +439,7 @@ def after_request(response):
     cleanup_memory()
     return response
 
-<<<<<<< Updated upstream
 
-@app.errorhandler(500)
-def server_error(e):
-    logger.error(f"Internal server error: {str(e)}")
-    return jsonify({"error": "Internal server error. Please try again later."}), 500
-
-
-# --- Static file serving ---
-@app.route("/<path:path>")
-def serve_static(path):
-    """Serve static files with cache control for Void Z1."""
-    response = send_from_directory(".", path)
-    if path.endswith((".js", ".css", ".html")):
-        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-        response.headers["Pragma"] = "no-cache"
-        response.headers["Expires"] = "0"
-    return response
-
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
-=======
 @app.errorhandler(500)
 def server_error(e):
     """Handle internal server errors."""
@@ -504,6 +491,40 @@ def health_check():
         
     return jsonify(health_status)
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 10000)))
->>>>>>> Stashed changes
+@app.route('/health')
+def health_check():
+    """Health check endpoint."""
+    try:
+        # Verify model is loaded
+        if not model or not vocab:
+            return jsonify({"status": "error", "message": "Model not loaded"}), 500
+        
+        # Try a simple model inference
+        with torch.no_grad():
+            dummy_input = torch.zeros((1, 1), dtype=torch.long)
+            model(dummy_input)
+        
+        return jsonify({
+            "status": "healthy",
+            "timestamp": datetime.utcnow().isoformat(),
+            "model_loaded": True,
+            "cuda_available": torch.cuda.is_available()
+        })
+    except Exception as e:
+        logger.error(f"Health check failed: {str(e)}")
+        return jsonify({
+            "status": "unhealthy",
+            "error": str(e),
+            "timestamp": datetime.utcnow().isoformat()
+        }), 500
+
+if __name__ == "__main__":
+    try:
+        check_required_files()
+        model, vocab = load_model()
+        logger.info("Application initialized successfully")
+        port = int(os.getenv('PORT', 10000))
+        app.run(host='0.0.0.0', port=port, debug=False)
+    except Exception as e:
+        logger.error(f"Failed to start application: {str(e)}")
+        sys.exit(1)
