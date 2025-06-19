@@ -2,8 +2,10 @@ import os
 import pickle
 
 def prepare_void_data():
-    # Read the input text
-    with open('../input.txt', 'r', encoding='utf-8') as f:
+    # Get the absolute path to input.txt
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    input_path = os.path.join(script_dir, '..', 'input.txt')
+    with open(input_path, 'r', encoding='utf-8') as f:
         text = f.read()
 
     # Get unique characters from the text
