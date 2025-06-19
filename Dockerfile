@@ -14,14 +14,17 @@ RUN pip install --no-cache-dir -r requirements.txt -r requirements-dev.txt
 # Copy project files
 COPY . .
 
-# Create log directory
-RUN mkdir -p logs
-
-# Verify setup
-RUN python verify_setup.py
+# Create required directories
+RUN mkdir -p logs out data/void
 
 # Set environment variables
 ENV PORT=10000
+
+# Initialize model files
+RUN python init_model.py
+
+# Verify setup
+RUN python verify_setup.py
 ENV PYTHONUNBUFFERED=1
 ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
