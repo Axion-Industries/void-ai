@@ -57,11 +57,9 @@ def verify_setup():
         except Exception as e:
             issues.append(f"Error loading meta.pkl: {str(e)}")
     
-    # Check environment variables
-    required_env_vars = ['PORT']
-    for var in required_env_vars:
-        if not os.getenv(var):
-            issues.append(f"Missing environment variable: {var}")
+    # Check environment variables (warn only for PORT at build time)
+    if not os.getenv('PORT'):
+        print('⚠️  Warning: PORT environment variable is not set. This is expected during build and will be set by Render at runtime.')
     
     return issues
 
