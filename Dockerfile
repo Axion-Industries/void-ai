@@ -21,15 +21,13 @@ RUN mkdir -p logs out data/void && \
     chmod -R 755 logs out data/void
 
 # Set environment variables
-ENV PORT=10000 \
-    MODEL_PATH=/app/out/model.pt \
+ENV MODEL_PATH=/app/out/model.pt \
     VOCAB_PATH=/app/data/void/vocab.pkl \
     META_PATH=/app/data/void/meta.pkl \
     PYTHONUNBUFFERED=1 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    GUNICORN_CMD_ARGS="--bind=0.0.0.0:${PORT} --workers=1 --threads=1 --timeout=300 --log-level=debug"
+    PYTHONDONTWRITEBYTECODE=1
 
 # Initialize model files
 RUN python init_model.py
@@ -48,4 +46,4 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:10000/health || exit 1
 
 # Run the application with proper worker configuration
-CMD ["gunicorn", "--bind", "0.0.0.0:${PORT}", "--workers", "1", "--threads", "1", "--timeout", "300", "--access-logfile", "-", "--error-logfile", "-", "--log-level", "debug", "--capture-output", "--worker-class", "sync", "--preload", "chat_api:app"]
+CMD exec gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 1 --timeout 300 --access-logfile - --error-logfile - --log-level debug --capture-output --worker-class sync --preload chat_api:app

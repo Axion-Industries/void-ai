@@ -3,8 +3,6 @@ services:
     name: void-z1
     runtime: docker
     plan: free
-    envVars:
-      - key: PORT
-        value: 10000
+    envVars: []
     healthCheckPath: /health
     autoDeploy: true
