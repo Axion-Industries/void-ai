@@ -29,14 +29,8 @@ ENV MODEL_PATH=/app/out/model.pt \
     LC_ALL=C.UTF-8 \
     PYTHONDONTWRITEBYTECODE=1
 
-# Initialize model files
-RUN python init_model.py
-
-# Verify setup
-RUN python verify_setup.py
-ENV PYTHONUNBUFFERED=1
-ENV LANG=C.UTF-8
-ENV LC_ALL=C.UTF-8
+# Initialize model files and verify setup
+RUN set -e && python init_model.py && python verify_setup.py
 
 # Expose the port
 EXPOSE 10000
