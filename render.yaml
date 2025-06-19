@@ -1,11 +1,14 @@
 services:
   - type: web
-    name: void-ai-chat-api
-    env: python
+    name: void-z1
+    runtime: python
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: python chat_api.py
+    startCommand: gunicorn chat_api:app --bind 0.0.0.0:$PORT --workers 1 --threads 2 --timeout 120
     envVars:
       - key: PYTHON_VERSION
-        value: 3.10
+        value: 3.10.0
+      - key: PORT
+        value: 10000
+    healthCheckPath: /
     autoDeploy: true
