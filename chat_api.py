@@ -217,51 +217,14 @@ except Exception as e:
 @app.route("/health")
 def health_check():
     """Health check endpoint for Void Z1."""
-    health_status = {
-        "status": "ok",
-        "timestamp": datetime.utcnow().isoformat(),
-        "components": {
-            "model_files": {
-                "status": "ok" if not missing_files else "error",
-                "details": {
-                    "model": os.path.exists(MODEL_PATH),
-                    "vocab": os.path.exists(VOCAB_PATH),
-                    "meta": os.path.exists(META_PATH)
-                }
-            },
-            "model_loaded": {
-                "status": "ok" if model and stoi and itos else "error"
-            },
-            "gpu": {
-                "available": torch.cuda.is_available(),
-                "device": torch.cuda.get_device_name(0) if torch.cuda.is_available() else "none"
-            }
-        }
-    }
-    
-    # Overall status is ok only if all components are ok
-    if any(
-        component["status"] == "error" 
-        for component in health_status["components"].values()
-    ):
-        health_status["status"] = "error"
-        return jsonify(health_status), 503
-        
-    return jsonify(health_status)
-
-@app.route('/health')
-def health_check():
-    """Health check endpoint."""
     try:
         # Verify model is loaded
         if not model or not vocab:
             return jsonify({"status": "error", "message": "Model not loaded"}), 500
-        
         # Try a simple model inference
         with torch.no_grad():
             dummy_input = torch.zeros((1, 1), dtype=torch.long)
             model(dummy_input)
-        
         return jsonify({
             "status": "healthy",
             "timestamp": datetime.utcnow().isoformat(),
@@ -435,10 +398,13 @@ def cleanup_memory():
 
 @app.after_request
 def after_request(response):
-    """After request handler to clean up resources."""
+    """After request handler to clean up resources and add security headers."""
     cleanup_memory()
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Content-Security-Policy'] = "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'"
     return response
-
 
 @app.errorhandler(500)
 def server_error(e):
@@ -447,76 +413,6 @@ def server_error(e):
     return jsonify({
         "error": "An unexpected error occurred. Please try again later."
     }), 500
-
-@app.after_request
-def add_security_headers(response):
-    response.headers['X-Content-Type-Options'] = 'nosniff'
-    response.headers['X-Frame-Options'] = 'DENY'
-    response.headers['X-XSS-Protection'] = '1; mode=block'
-    response.headers['Content-Security-Policy'] = "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'"
-    return response
-
-@app.route("/health")
-def health_check():
-    """Health check endpoint for Void Z1."""
-    health_status = {
-        "status": "ok",
-        "timestamp": datetime.utcnow().isoformat(),
-        "components": {
-            "model_files": {
-                "status": "ok" if not missing_files else "error",
-                "details": {
-                    "model": os.path.exists(MODEL_PATH),
-                    "vocab": os.path.exists(VOCAB_PATH),
-                    "meta": os.path.exists(META_PATH)
-                }
-            },
-            "model_loaded": {
-                "status": "ok" if model and stoi and itos else "error"
-            },
-            "gpu": {
-                "available": torch.cuda.is_available(),
-                "device": torch.cuda.get_device_name(0) if torch.cuda.is_available() else "none"
-            }
-        }
-    }
-    
-    # Overall status is ok only if all components are ok
-    if any(
-        component["status"] == "error" 
-        for component in health_status["components"].values()
-    ):
-        health_status["status"] = "error"
-        return jsonify(health_status), 503
-        
-    return jsonify(health_status)
-
-@app.route('/health')
-def health_check():
-    """Health check endpoint."""
-    try:
-        # Verify model is loaded
-        if not model or not vocab:
-            return jsonify({"status": "error", "message": "Model not loaded"}), 500
-        
-        # Try a simple model inference
-        with torch.no_grad():
-            dummy_input = torch.zeros((1, 1), dtype=torch.long)
-            model(dummy_input)
-        
-        return jsonify({
-            "status": "healthy",
-            "timestamp": datetime.utcnow().isoformat(),
-            "model_loaded": True,
-            "cuda_available": torch.cuda.is_available()
-        })
-    except Exception as e:
-        logger.error(f"Health check failed: {str(e)}")
-        return jsonify({
-            "status": "unhealthy",
-            "error": str(e),
-            "timestamp": datetime.utcnow().isoformat()
-        }), 500
 
 if __name__ == "__main__":
     try:
