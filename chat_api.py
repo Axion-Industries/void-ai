@@ -526,5 +526,6 @@ if __name__ == "__main__":
         port = int(os.getenv('PORT', 10000))
         app.run(host='0.0.0.0', port=port, debug=False)
     except Exception as e:
-        logger.error(f"Failed to start application: {str(e)}")
+        logger.error(f"Failed to start application: {str(e)}", exc_info=True)
+        print(f"FATAL: {str(e)}")
         sys.exit(1)

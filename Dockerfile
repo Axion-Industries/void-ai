@@ -3,7 +3,7 @@ FROM python:3.9-slim
 WORKDIR /app
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y \
+RUN set -e && apt-get update && apt-get install -y \
     build-essential \
     curl \
     python3-dev \
@@ -11,14 +11,13 @@ RUN apt-get update && apt-get install -y \
 
 # Copy requirements first to leverage Docker cache
 COPY requirements.txt requirements-dev.txt ./
-RUN pip install --no-cache-dir -r requirements.txt -r requirements-dev.txt
+RUN set -e && pip install --no-cache-dir -r requirements.txt -r requirements-dev.txt
 
 # Copy project files
 COPY . .
 
 # Create required directories
-RUN mkdir -p logs out data/void && \
-    chmod -R 755 logs out data/void
+RUN set -e && mkdir -p logs out data/void && chmod -R 755 logs out data/void
 
 # Set environment variables
 ENV MODEL_PATH=/app/out/model.pt \
