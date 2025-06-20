@@ -1,8 +1,8 @@
 /* TEAM */
-Developer: Your Name
-Contact: your.email@example.com
-Website: https://your-website.com
-Location: Your Location
+Developer: Axion Industries
+Contact: axionindustries.official@gmail.com
+Website: https://example.com
+Location: Miami, Florida
 
 /* SITE */
 Last update: 2025/06/17

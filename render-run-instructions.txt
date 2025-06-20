@@ -1,0 +1,25 @@
+1. Service Type
+Type: Web Service
+2. Name
+Name: void
+3. Region
+Choose your preferred region (default is fine unless you have a preference).
+4. Branch
+Branch: main (or the branch you want to deploy from)
+5. Root Directory
+Root Directory: (leave blank or / if your Dockerfile is in the root)
+6. Runtime
+Runtime: Docker
+7. Dockerfile Path
+Dockerfile Path: Dockerfile (default, unless you renamed it)
+8. Build Command
+Build Command: (leave blank, Dockerfile handles it)
+9. Start Command
+Start Command: (leave blank, Dockerfile handles it)
+10. Environment Variables
+PORT: Do NOT set this. Render sets it automatically.
+You may add any other secrets or config variables your app needs (but not PORT).
+11. Health Check Path
+Health Check Path: /health
+12. Auto Deploy
+Auto Deploy: Enabled (recommended)

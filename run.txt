@@ -1,0 +1,5 @@
+git config --global user.email "axion.industries.ai@gmail.com"
+git config --global user.name "Axion Industries"
+git add .
+git commit -m "Fixed verify_setup.py errors"
+git push origin main
