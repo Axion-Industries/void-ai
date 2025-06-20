@@ -1,5 +1,5 @@
 flask==3.0.3
 numpy==1.26.4
-torch==2.5.1
+torch==2.7.1
 gunicorn==21.2.0
 werkzeug==3.0.1
